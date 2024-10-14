@@ -1,0 +1,34 @@
+{
+    "name": "e282486518/laravel-translatable",
+    "alias": "",
+    "description": "Dcat-admin的laravel-translatable数据库多语言组件",
+    "type": "library",
+    "keywords": ["dcat-admin", "extension", "database", "translatable"],
+    "homepage": "https://github.com/e282486518/laravel-translatable",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "e282486518",
+            "email": "phphome@qq.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1.0",
+        "dcat/laravel-admin": "~2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "e282486518\\Translatable\\": "src/"
+        }
+    },
+    "extra": {
+        "dcat-admin": "e282486518\\Translatable\\TranslatableServiceProvider",
+        "laravel": {
+            "providers": [
+                "e282486518\\Translatable\\TranslatableServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
