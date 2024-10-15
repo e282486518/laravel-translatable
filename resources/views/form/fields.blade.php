@@ -13,7 +13,7 @@
 @elseif($layout->hasColumns())
     {!! $layout->build() !!}
 @else
-    @if(config('app.locale_array')) {{-- 开启多语言 and 模型中有多语言字段 --}}
+    @if(config('app.locale_array') && $istrans) {{-- 开启多语言 and 模型中有多语言字段 --}}
         <!-- Tab 显示多语言 -->
         <div>
             <ul class="nav nav-tabs pl-1" style="margin-top: -1rem">
