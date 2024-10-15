@@ -13,7 +13,7 @@
 @elseif($layout->hasColumns())
     {!! $layout->build() !!}
 @else
-    @if(config('app.locale_array'))
+    @if(config('app.locale_array')) {{-- 开启多语言 and 模型中有多语言字段 --}}
         <!-- Tab 显示多语言 -->
         <div>
             <ul class="nav nav-tabs pl-1" style="margin-top: -1rem">
@@ -27,12 +27,12 @@
             </ul>
             <div class="tab-content fields-group mt-2 pt-1 pb-1">
                 @foreach(config('app.locale_array') as $lang => $label)
-                    <div class="tab-pane {{ $lang == 'zh_CN' ? 'active' : '' }}" id="{{ $lang }}">
+                    <div class="tab-pane {{ $lang == config('app.locale') ? 'active' : '' }}" id="{{ $lang }}">
                         @foreach($fields as $field)
                             @php
                                 $field->setLocale($lang);
                             @endphp
-                            @if($lang == config('app.locale') || $field->isTranslatable()) {{-- 只在第一个tab中显示非多语言字段 --}}
+                            @if($lang == config('app.locale') || $field->getTranslatable()) {{-- 只在第一个tab中显示非多语言字段 --}}
                             {!! $field->render() !!}
                             @endif
                         @endforeach

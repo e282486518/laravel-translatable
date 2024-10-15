@@ -55,7 +55,7 @@ class Form extends \Dcat\Admin\Form
     }
 
     /**
-     * Prepare input data for update.
+     * 对写入的数据进行前置操作
      * 支持 {"title": {"cn": "1", "en": "2"}, "desc": {"cn": "3", "en": "4"}, "status": 1} 格式
      * 也就是form的 title[cn]=1, title[en]=2, desc[cn]=3, desc[en]=4, status=1
      *
@@ -90,5 +90,45 @@ class Form extends \Dcat\Admin\Form
         }
 
         return $prepared;
+    }
+
+    /**
+     * Generate a Field object and add to form builder if Field exists.
+     *
+     * @param  string  $method
+     * @param  array  $arguments
+     * @return Field
+     */
+    public function __call($method, $arguments)
+    {
+        if (static::hasMacro($method)) {
+            return $this->macroCall($method, $arguments);
+        }
+
+        if ($className = static::findFieldClass($method)) {
+            $column = Arr::get($arguments, 0, '');
+
+            $element = new $className($column, array_slice($arguments, 1));
+
+            // 设置字段是否支持多语言
+            if ($this->repository()) {
+                $_model = $this->repository()->model(); // 模型存在时, 取模型
+                if (isset($_model->translatable)) {
+                    $_fields = $_model->translatable?:[]; // 取多语言字段列表, 默认[]
+                    if (in_array($column, $_fields)) {
+                        $element->setTranslatable(true);
+                    }
+                }
+            }
+
+
+            $this->pushField($element);
+
+            return $element;
+        }
+
+        admin_error('Error', "Field type [$method] does not exist.");
+
+        return new Field\Nullable();
     }
 }

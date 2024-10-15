@@ -2,10 +2,7 @@
 
 namespace e282486518\Translatable\Core\Form;
 
-use e282486518\Translatable\Helpers;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
 
 class Field extends \Dcat\Admin\Form\Field
 {
@@ -15,17 +12,29 @@ class Field extends \Dcat\Admin\Form\Field
      */
     protected string $locale;
 
+    /**
+     * @var bool 是否是多语言字段
+     */
+    protected bool $locale_fields = false;
+
+    // ==== 设置当前语言 =======================
     public function getLocale(): string {
         return $this->locale ?? config('app.locale');
     }
 
-    public function setLocale($locale) {
+    public function setLocale(string $locale) {
         $this->locale = $locale;
     }
 
-    public function isTranslatable(): bool {
-        return $this->form->model() instanceof Model && in_array($this->column, $this->form->model()->translatable);
+    // ==== 设置该字段是否支持多语言 ===============
+    public function getTranslatable(): bool {
+        return $this->locale_fields;
     }
+
+    public function setTranslatable(bool $fields) {
+        $this->locale_fields = $fields;
+    }
+
 
     /**
      * @param  array  $data
@@ -61,6 +70,13 @@ class Field extends \Dcat\Admin\Form\Field
 //    }
 
     /**
+     * @return string
+     */
+    protected function defaultPlaceholder(): string {
+        return trans('admin.input', [], $this->getLocale()).' '.$this->label;
+    }
+
+    /**
      * Add html attributes to elements.
      *
      * @param  array|string  $attribute
@@ -93,10 +109,14 @@ class Field extends \Dcat\Admin\Form\Field
 
         foreach ($this->attributes as $name => $value) {
             // 判断当前字段的名称, 是否支持多语言
-            if ($this->isTranslatable()) {
+            if ($this->getTranslatable()) {
                 if ($name == 'name') {
                     // value=title[en]
                     $value .= '['.$this->getLocale().']';
+                }
+                if ($name == 'placeholder') {
+                    // value=title[en]
+                    $value = $this->defaultPlaceholder();
                 }
                 if ($name == 'value' && is_array($value)) {
                     // value=$value[en]
@@ -115,7 +135,10 @@ class Field extends \Dcat\Admin\Form\Field
      * @return array
      */
     public function defaultVariables()
-    {//dump($this->attributes, $this->value(), $this->formatAttributes(), $this->column);
+    {//dump($this->attributes, $this->value(), $this->formatAttributes(), $this->column, $this->form->model());
+        // 设置label多语言
+        $this->label = str_replace('_', ' ', admin_trans_field($this->column, $this->getLocale()));
+
         return [
             'name'        => $this->getElementName(),
             'help'        => $this->help,
