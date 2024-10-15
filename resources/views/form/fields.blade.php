@@ -13,7 +13,36 @@
 @elseif($layout->hasColumns())
     {!! $layout->build() !!}
 @else
-    @foreach($fields as $field)
-        {!! $field->render() !!}
-    @endforeach
+    @if(config('app.locale_array'))
+        <!-- Tab 显示多语言 -->
+        <div>
+            <ul class="nav nav-tabs pl-1" style="margin-top: -1rem">
+                @foreach(config('app.locale_array') as $lang => $label)
+                    <li class="nav-item">
+                        <a class="nav-link {{ $lang == 'zh_CN' ? 'active' : '' }}" href="#{{ $lang }}" data-toggle="tab">
+                            {!! $label !!} &nbsp;<i class="feather icon-alert-circle has-tab-error text-danger d-none"></i>
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+            <div class="tab-content fields-group mt-2 pt-1 pb-1">
+                @foreach(config('app.locale_array') as $lang => $label)
+                    <div class="tab-pane {{ $lang == 'zh_CN' ? 'active' : '' }}" id="{{ $lang }}">
+                        @foreach($fields as $field)
+                            @php
+                                $field->setLocale($lang);
+                            @endphp
+                            @if($lang == config('app.locale') || $field->isTranslatable()) {{-- 只在第一个tab中显示非多语言字段 --}}
+                            {!! $field->render() !!}
+                            @endif
+                        @endforeach
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @else
+        @foreach($fields as $field)
+            {!! $field->render() !!}
+        @endforeach
+    @endif
 @endif
