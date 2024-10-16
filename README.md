@@ -2,6 +2,10 @@
 
 这是一个`Dcat-Admin`的多语言兼容扩展, 在不改变`dcat-admin`原使用习惯的前提下, 兼容数据库多语言方案.
 
+特别说明: 目前只测试了 `PHP8.1`, `MySQL5.7`, `Laravel9`, 其他环境如有需要自行测试修改.
+
+
+
 ## 使用方法
 
 **第一步: 安装扩展**
@@ -157,3 +161,10 @@ class TestController extends AdminController
 ![编辑2](https://raw.githubusercontent.com/e282486518/laravel-translatable/master/preview/edit-en.png)
 ![编辑3](https://raw.githubusercontent.com/e282486518/laravel-translatable/master/preview/edit-line.png)
 ![显示1](https://raw.githubusercontent.com/e282486518/laravel-translatable/master/preview/show.png)
+
+
+## 感谢
+
+jqhph/dcat-admin
+
+spatie/laravel-translatable
