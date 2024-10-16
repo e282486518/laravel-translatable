@@ -13,33 +13,40 @@
 @elseif($layout->hasColumns())
     {!! $layout->build() !!}
 @else
-    @if(config('app.locale_array') && $istrans) {{-- 开启多语言 and 模型中有多语言字段 --}}
-        <!-- Tab 显示多语言 -->
-        <div>
-            <ul class="nav nav-tabs pl-1" style="margin-top: -1rem">
-                @foreach(config('app.locale_array') as $lang => $label)
-                    <li class="nav-item">
-                        <a class="nav-link {{ $lang == 'zh_CN' ? 'active' : '' }}" href="#{{ $lang }}" data-toggle="tab">
-                            {!! $label !!} &nbsp;<i class="feather icon-alert-circle has-tab-error text-danger d-none"></i>
-                        </a>
-                    </li>
-                @endforeach
-            </ul>
-            <div class="tab-content fields-group mt-2 pt-1 pb-1">
-                @foreach(config('app.locale_array') as $lang => $label)
-                    <div class="tab-pane {{ $lang == config('app.locale') ? 'active' : '' }}" id="{{ $lang }}">
-                        @foreach($fields as $field)
-                            @php
-                                $field->setLocale($lang);
-                            @endphp
-                            @if($lang == config('app.locale') || $field->getTranslatable()) {{-- 只在第一个tab中显示非多语言字段 --}}
-                            {!! $field->render() !!}
-                            @endif
-                        @endforeach
-                    </div>
-                @endforeach
+    @if($istrans && config('translatable.locale_array')) {{-- 开启多语言 and 模型中有多语言字段 --}}
+        @if(config('translatable.locale_form') == 'tab')
+            <!-- Tab 显示多语言 -->
+            <div>
+                <ul class="nav nav-tabs pl-1" style="margin-top: -1rem">
+                    @foreach(config('translatable.locale_array') as $lang => $label)
+                        <li class="nav-item">
+                            <a class="nav-link {{ $lang == 'zh_CN' ? 'active' : '' }}" href="#{{ $lang }}" data-toggle="tab">
+                                {!! $label !!} &nbsp;<i class="feather icon-alert-circle has-tab-error text-danger d-none"></i>
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
+                <div class="tab-content fields-group mt-2 pt-1 pb-1">
+                    @foreach(config('translatable.locale_array') as $lang => $label)
+                        <div class="tab-pane {{ $lang == config('app.locale') ? 'active' : '' }}" id="{{ $lang }}">
+                            @foreach($fields as $field)
+                                @if($lang == config('app.locale') || $field->getTranslatable()) {{-- 只在第一个tab中显示非多语言字段 --}}
+                                {!! $field->setLocale($lang)->render() !!}
+                                @endif
+                            @endforeach
+                        </div>
+                    @endforeach
+                </div>
             </div>
-        </div>
+        @else
+            @foreach($fields as $field)
+                @foreach(config('translatable.locale_array') as $lang => $label)
+                    @if($lang == config('app.locale') || $field->getTranslatable())
+                    {!! $field->setLocale($lang)->render() !!}
+                    @endif
+                @endforeach
+            @endforeach
+        @endif
     @else
         @foreach($fields as $field)
             {!! $field->render() !!}

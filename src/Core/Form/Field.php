@@ -24,6 +24,7 @@ class Field extends \Dcat\Admin\Form\Field
 
     public function setLocale(string $locale) {
         $this->locale = $locale;
+        return $this;
     }
 
     // ==== 设置该字段是否支持多语言 ===============
@@ -33,6 +34,7 @@ class Field extends \Dcat\Admin\Form\Field
 
     public function setTranslatable(bool $fields) {
         $this->locale_fields = $fields;
+        return $this;
     }
 
 
