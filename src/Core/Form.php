@@ -13,6 +13,66 @@ use e282486518\Translatable\Core\Form\Field;
 class Form extends \Dcat\Admin\Form
 {
 
+    protected static $availableFields = [
+        'button'              => Field\Button::class,
+        'checkbox'            => Field\Checkbox::class,
+        'currency'            => Field\Currency::class,
+        'date'                => Field\Date::class,
+        'dateRange'           => Field\DateRange::class,
+        'datetime'            => Field\Datetime::class,
+        'datetimeRange'       => Field\DatetimeRange::class,
+        'decimal'             => Field\Decimal::class,
+        'display'             => Field\Display::class,
+        'divider'             => Field\Divide::class,
+        'embeds'              => Field\Embeds::class,
+        'editor'              => Field\Editor::class,
+        'email'               => Field\Email::class,
+        'hidden'              => Field\Hidden::class,
+        'id'                  => Field\Id::class,
+        'ip'                  => Field\Ip::class,
+        'map'                 => Field\Map::class,
+        'mobile'              => Field\Mobile::class,
+        'month'               => Field\Month::class,
+        'multipleSelect'      => Field\MultipleSelect::class,
+        'number'              => Field\Number::class,
+        'password'            => Field\Password::class,
+        'radio'               => Field\Radio::class,
+        'rate'                => Field\Rate::class,
+        'select'              => Field\Select::class,
+        'slider'              => Field\Slider::class,
+        'switch'              => Field\SwitchField::class,
+        'text'                => Field\Text::class,
+        'textarea'            => Field\Textarea::class,
+        'time'                => Field\Time::class,
+        'timeRange'           => Field\TimeRange::class,
+        'url'                 => Field\Url::class,
+        'year'                => Field\Year::class,
+        'html'                => Field\Html::class,
+        'tags'                => Field\Tags::class,
+        'icon'                => Field\Icon::class,
+        'captcha'             => Field\Captcha::class,
+        'listbox'             => Field\Listbox::class,
+        'file'                => Field\File::class,
+        'image'               => Field\Image::class,
+        'multipleFile'        => Field\MultipleFile::class,
+        'multipleImage'       => Field\MultipleImage::class,
+        'hasMany'             => Field\HasMany::class,
+        'tree'                => Field\Tree::class,
+        'table'               => Field\Table::class,
+        'list'                => Field\ListField::class,
+        'timezone'            => Field\Timezone::class,
+        'keyValue'            => Field\KeyValue::class,
+        'tel'                 => Field\Tel::class,
+        'markdown'            => Field\Markdown::class,
+        'range'               => Field\Range::class,
+        'color'               => Field\Color::class,
+        'array'               => Field\ArrayField::class,
+        'selectTable'         => Field\SelectTable::class,
+        'multipleSelectTable' => Field\MultipleSelectTable::class,
+        'autocomplete'        => Field\Autocomplete::class,
+    ];
+
+
     /**
      * Create a new form instance.
      *
@@ -25,33 +85,6 @@ class Form extends \Dcat\Admin\Form
         parent::__construct($repository, $callback, $request);
         $this->builder = new Form\Builder($this);
 
-        // 自定义字段类
-        Form::extend('text', Field\Text::class);
-        Form::extend('button', Field\Button::class);
-        Form::extend('cascadeGroup', Field\CascadeGroup::class);
-        Form::extend('dateRange', Field\DateRange::class);
-        Form::extend('display', Field\Display::class);
-        Form::extend('divide', Field\Divide::class);
-        Form::extend('editor', Field\Editor::class);
-        Form::extend('embeds', Field\Embeds::class);
-        Form::extend('file', Field\File::class);
-        Form::extend('hasMany', Field\HasMany::class);
-        Form::extend('hidden', Field\Hidden::class);
-        Form::extend('html', Field\Html::class);
-        Form::extend('id', Field\Id::class);
-        Form::extend('keyValue', Field\KeyValue::class);
-        Form::extend('listField', Field\ListField::class);
-        Form::extend('map', Field\Map::class);
-        Form::extend('markdown', Field\Markdown::class);
-        Form::extend('radio', Field\Radio::class);
-        Form::extend('range', Field\Range::class);
-        Form::extend('select', Field\Select::class);
-        Form::extend('selectTable', Field\SelectTable::class);
-        Form::extend('slider', Field\Slider::class);
-        Form::extend('switchField', Field\SwitchField::class);
-        Form::extend('tree', Field\Tree::class);
-        Form::extend('textarea', Field\Textarea::class);
-        Form::extend('tags', Field\Tags::class);
     }
 
     /**
