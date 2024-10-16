@@ -10,7 +10,7 @@
 composer require e282486518/laravel-translatable
 ```
 
-或者下载此扩展, 将其复制到 `dcat-admin-extensions` 目录下, 并在后台中启用此扩展.
+或者下载此扩展, 将其复制到 `/dcat-admin-extensions/e282486518/laravel-translatable` 目录下, 并在后台中启用此扩展.
 
 
 **第二步: 修改数据库**
@@ -151,9 +151,9 @@ class TestController extends AdminController
 }
 ```
 
-![列表1](https://raw.githubusercontent.com/e282486518/yii2admin/master/preview/index-cn.png)
-![列表2](https://raw.githubusercontent.com/e282486518/yii2admin/master/preview/index-en.png)
-![编辑1](https://raw.githubusercontent.com/e282486518/yii2admin/master/preview/edit-cn.png)
-![编辑2](https://raw.githubusercontent.com/e282486518/yii2admin/master/preview/edit-en.png)
-![编辑3](https://raw.githubusercontent.com/e282486518/yii2admin/master/preview/edit-line.png)
-![显示1](https://raw.githubusercontent.com/e282486518/yii2admin/master/preview/show.png)
+![列表1](https://raw.githubusercontent.com/e282486518/laravel-translatable/master/preview/index-cn.png)
+![列表2](https://raw.githubusercontent.com/e282486518/laravel-translatable/master/preview/index-en.png)
+![编辑1](https://raw.githubusercontent.com/e282486518/laravel-translatable/master/preview/edit-cn.png)
+![编辑2](https://raw.githubusercontent.com/e282486518/laravel-translatable/master/preview/edit-en.png)
+![编辑3](https://raw.githubusercontent.com/e282486518/laravel-translatable/master/preview/edit-line.png)
+![显示1](https://raw.githubusercontent.com/e282486518/laravel-translatable/master/preview/show.png)
