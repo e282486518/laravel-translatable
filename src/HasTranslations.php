@@ -115,11 +115,19 @@ trait HasTranslations
         if ($key !== null) {
             $this->guardAgainstNonTranslatableAttribute($key);
 
-            return array_filter(
-                json_decode($this->getAttributes()[$key] ?? '' ?: '{}', true) ?: [],
-                fn ($value, $locale) => $this->filterTranslations($value, $locale, $allowedLocales),
-                ARRAY_FILTER_USE_BOTH,
-            );
+            $_attrs_str = $this->getAttributes()[$key];
+            $_attrs_arr = json_decode($_attrs_str ?? '' ?: '{}', true);
+
+            // JSON字符串, 反序列化
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return array_filter(
+                    $_attrs_arr ?: [],
+                    fn ($value, $locale) => $this->filterTranslations($value, $locale, $allowedLocales),
+                    ARRAY_FILTER_USE_BOTH,
+                );
+            }
+            // 如果是字符串, 构造一个数组 ['zh_CN' => '属性值'], 方便兼容旧数据
+            return [config('app.locale') => $_attrs_str];
         }
 
         return array_reduce($this->getTranslatableAttributes(), function ($result, $item) use ($allowedLocales) {
@@ -310,6 +318,14 @@ trait HasTranslations
         return $this->translationLocale ?: config('app.locale');
     }
 
+    /**
+     * ---------------------------------------
+     * 多语言字段
+     *
+     * @return array
+     * @author hlf <phphome@qq.com> 2024/10/17
+     * ---------------------------------------
+     */
     public function getTranslatableAttributes(): array
     {
         return is_array($this->translatable)
@@ -328,6 +344,15 @@ trait HasTranslations
         });
     }
 
+    /**
+     * ---------------------------------------
+     * 获取映射数组, 将 多语言字段 映射成array,
+     * 会使用 HasAttributes->castAttribute($key, $value) 执行return $this->fromJson($value);
+     *
+     * @return array
+     * @author hlf <phphome@qq.com> 2024/10/17
+     * ---------------------------------------
+     */
     public function getCasts(): array
     {
         return array_merge(
@@ -335,6 +360,26 @@ trait HasTranslations
             array_fill_keys($this->getTranslatableAttributes(), 'array'),
         );
     }
+
+    /**
+     * Decode the given JSON back into an array or object.
+     * 重写模型的 HasAttributes->fromJson() 方法, 用以处理json时,如果非json格式, 那么返回原数据
+     *
+     * @param  string  $value
+     * @param  bool  $asObject
+     * @return mixed
+     */
+    public function fromJson($value, $asObject = false): mixed {
+        $obj = json_decode($value ?? '', ! $asObject);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            return $obj;
+        }
+        return $value;
+    }
+
+
+
+
 
     public function locales(): array
     {

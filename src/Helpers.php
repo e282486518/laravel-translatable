@@ -14,8 +14,11 @@ class Helpers
      * @return array
      * @author hlf <phphome@qq.com> 2024/10/11
      */
-    public static function getColumnAndlng(string $column): array {
+    public static function getColumnAndlng($column): array {
         $lng = '';
+        if (is_array($column)) {
+            return [$column, $lng];
+        }
         if (preg_match('/(\w+)\[(\w+)\]/', $column, $matches)) {
             $column = $matches[1];
             $lng = $matches[2];

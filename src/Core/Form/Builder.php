@@ -23,11 +23,6 @@ class Builder extends \Dcat\Admin\Form\Builder
                 return true;
             }
         }
-//        foreach ($this->fields() as $value) {
-//            if ($value->getTranslatable()) {
-//                return true;
-//            }
-//        }
         return false;
     }
 

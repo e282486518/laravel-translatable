@@ -109,16 +109,18 @@ class Field extends \Dcat\Admin\Form\Field
      * @return array
      */
     public function defaultVariables()
-    {//dump($this->attributes, $this->value(), $this->formatAttributes(), $this->column, $this->form->model());
+    {//dump($this->attributes, $this->value, $this->formatAttributes(), $this->column, $this->form->model());
         // 设置label多语言
-        $this->label = str_replace('_', ' ', admin_trans_field($this->column, $this->getLocale()));
+        //$column = is_array($this->column) ? implode('', $this->column) : $this->column;
+        //$this->label = str_replace('_', ' ', admin_trans_field($column, $this->getLocale()));
+        //dump($this->column);
 
         return [
             'name'        => $this->getElementName(),
             'help'        => $this->help,
             'class'       => $this->getElementClassString(),
             'value'       => $this->value(),
-            'label'       => $this->label,
+            'label'       => $this->label.$this->getLocaleLabel(),
             'viewClass'   => $this->getViewElementClasses(),
             'column'      => $this->column,
             'errorKey'    => $this->getErrorKey(),
@@ -129,6 +131,13 @@ class Field extends \Dcat\Admin\Form\Field
             'selector'    => $this->getElementClassSelector(),
             'options'     => $this->options,
         ];
+    }
+
+    public function getLocaleLabel() {
+        if ($this->getTranslatable()) {
+            return '['.$this->getLocale().']';
+        }
+        return '';
     }
 
 }

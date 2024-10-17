@@ -88,6 +88,22 @@ class Form extends \Dcat\Admin\Form
     }
 
     /**
+     * @var string 多语言Form展示方式: tab/line
+     */
+    protected $localeForm;
+    // 设置
+    public function setLocaleForm($lab) {
+        if (in_array($lab, ['tab', 'line'])) {
+            $this->localeForm = $lab;
+        }
+        return $this;
+    }
+    // 获取
+    public function getLocaleForm() {
+        return $this->localeForm ?? config('translatable.locale_form');
+    }
+
+    /**
      * 对写入的数据进行前置操作
      * 支持 {"title": {"cn": "1", "en": "2"}, "desc": {"cn": "3", "en": "4"}, "status": 1} 格式
      * 也就是form的 title[cn]=1, title[en]=2, desc[cn]=3, desc[en]=4, status=1
