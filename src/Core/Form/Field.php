@@ -109,14 +109,15 @@ class Field extends \Dcat\Admin\Form\Field
      * @return array
      */
     public function defaultVariables()
-    {//dump($this->attributes, $this->value, $this->formatAttributes(), $this->column, $this->form->model());
+    {
+        //dump($this->attributes, $this->value, $this->formatAttributes(), $this->column, $this->form->model());
         // 设置label多语言
-        //$column = is_array($this->column) ? implode('', $this->column) : $this->column;
-        //$this->label = str_replace('_', ' ', admin_trans_field($column, $this->getLocale()));
-        //dump($this->column);
+        if (!is_array($this->column) && $this->getLocale() != config('app.locale')) {
+            $this->label = str_replace('_', ' ', admin_trans_field($this->column, $this->getLocale()));
+        }
 
         return [
-            'name'        => $this->getElementName(),
+            'name'        => $this->getElementName().$this->getLocaleName(),
             'help'        => $this->help,
             'class'       => $this->getElementClassString(),
             'value'       => $this->value(),
@@ -133,11 +134,57 @@ class Field extends \Dcat\Admin\Form\Field
         ];
     }
 
-    public function getLocaleLabel() {
+    /**
+     * ---------------------------------------
+     * 在 form 的 name 值后面加上 语言 属性, "name=abc" => "name=abc[zh_CN]"
+     *
+     * @return string
+     * @author hlf <phphome@qq.com> 2024/10/18
+     * ---------------------------------------
+     */
+    public function getLocaleName() {
         if ($this->getTranslatable()) {
             return '['.$this->getLocale().']';
         }
         return '';
+    }
+
+    /**
+     * ---------------------------------------
+     * 在 form 的 label 值后面加上 语言 属性, "姓名" => "姓名[cn]"
+     *
+     * @return string
+     * @author hlf <phphome@qq.com> 2024/10/18
+     * ---------------------------------------
+     */
+    public function getLocaleLabel() {
+        if ($this->getTranslatable()) {
+            $_locale = $this->extractLocaleInfo($this->getLocale());
+            return '['.$_locale.']';
+        }
+        return '';
+    }
+
+    /**
+     * ---------------------------------------
+     * 取语言中的地图码
+     * zh_CN => cn,  en => en
+     *
+     * @param $locale
+     * @return string
+     * @author hlf <phphome@qq.com> 2024/10/18
+     * ---------------------------------------
+     */
+    function extractLocaleInfo($locale) {
+        // 查找下划线的位置
+        $underscorePosition = strpos($locale, '_');
+        if ($underscorePosition === false) {
+            // 如果没有下划线，则只有语言代码
+            return strtolower($locale);
+        } else {
+            // 如果有下划线，则分割字符串获取语言代码和区域代码
+            return strtolower(substr($locale, $underscorePosition + 1));
+        }
     }
 
 }

@@ -306,6 +306,8 @@ trait HasTranslations
         return true;
     }
 
+
+
     public function setLocale(string $locale): self
     {
         $this->translationLocale = $locale;
@@ -417,6 +419,8 @@ trait HasTranslations
             }
         });
     }
+
+    // ===== sql条件查询: 查询指定列,的语言 ================================
 
     /**
      * @deprecated
