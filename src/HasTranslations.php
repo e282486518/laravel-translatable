@@ -2,38 +2,119 @@
 
 namespace e282486518\Translatable;
 
-use Exception;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Support\Str;
 
 trait HasTranslations
 {
+    /**
+     * @var string|null 当前多语言
+     */
     protected ?string $translationLocale = null;
 
+    /**
+     * ---------------------------------------
+     * 设置多语言
+     *
+     * @param string $locale
+     * @return $this
+     * @author hlf <phphome@qq.com> 2024/10/24
+     * ---------------------------------------
+     */
+    public function setLocale(string $locale): self
+    {
+        $this->translationLocale = $locale;
+
+        return $this;
+    }
+
+    /**
+     * ---------------------------------------
+     * 获取多语言
+     *
+     * @return string
+     * @author hlf <phphome@qq.com> 2024/10/24
+     * ---------------------------------------
+     */
+    public function getLocale(): string
+    {
+        return $this->translationLocale ?: config('app.locale');
+    }
+
+    // setLocale 的静态方法
     public static function usingLocale(string $locale): self
     {
         return (new self())->setLocale($locale);
     }
 
-    public function useFallbackLocale(): bool
-    {
-        if (property_exists($this, 'useFallbackLocale')) {
-            return $this->useFallbackLocale;
-        }
 
-        return true;
+    // ====== 以下 \Illuminate\Database\Eloquent\Model->toArray() 调用 =========================================
+
+    /**
+     * ---------------------------------------
+     * 获取映射数组, 将 多语言字段 映射成array,
+     * [重写]会使用 HasAttributes->castAttribute($key, $value) 执行return $this->fromJson($value);
+     *
+     * @return array
+     * @author hlf <phphome@qq.com> 2024/10/17
+     * ---------------------------------------
+     */
+    public function getCasts(): array
+    {
+        return array_merge(
+            parent::getCasts(),
+            array_fill_keys($this->getTranslatableAttributes(), 'array'),
+        );
     }
 
+    /**
+     * 解析json
+     * [重写]模型的 HasAttributes->fromJson() 方法, 用以处理json时,如果非json格式, 那么返回原数据
+     *
+     * @param  string  $value
+     * @param  bool  $asObject
+     * @return mixed
+     */
+    public function fromJson($value, $asObject = false): mixed {
+        $obj = json_decode($value ?? '', ! $asObject);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            return $obj;
+        }
+        return $value;
+    }
+
+    // ====== 以下 \Illuminate\Database\Eloquent\Model->setAttribute/getAttribute 调用 =========================================
+
+    /**
+     * ---------------------------------------
+     * 获取一个普通属性（而不是relationship）。
+     * [重写] trait HasAttributes 的 getAttributeValue 方法
+     *
+     * @param $key
+     * @return mixed
+     * @author hlf <phphome@qq.com> 2024/10/24
+     * ---------------------------------------
+     */
     public function getAttributeValue($key): mixed
     {
         if (! $this->isTranslatableAttribute($key)) {
             return parent::getAttributeValue($key);
         }
 
-        return $this->getTranslation($key, $this->getLocale(), $this->useFallbackLocale());
+        return $this->getTranslation($key, $this->getLocale());
     }
 
+    /**
+     * ---------------------------------------
+     * 使用属性的赋值器进行数组转换，以获取属性的值。
+     * [重写] trait HasAttributes 的 mutateAttributeForArray 方法
+     *
+     * @param $key
+     * @param $value
+     * @return mixed
+     * @author hlf <phphome@qq.com> 2024/10/24
+     * ---------------------------------------
+     */
     protected function mutateAttributeForArray($key, $value): mixed
     {
         if (! $this->isTranslatableAttribute($key)) {
@@ -45,6 +126,17 @@ trait HasTranslations
         return array_map(fn ($value) => parent::mutateAttributeForArray($key, $value), $translations);
     }
 
+    /**
+     * ---------------------------------------
+     * 在模型上设置给定的属性。
+     * [重写] trait HasAttributes 的 setAttribute 方法
+     *
+     * @param $key
+     * @param $value
+     * @return HasTranslations|mixed
+     * @author hlf <phphome@qq.com> 2024/10/24
+     * ---------------------------------------
+     */
     public function setAttribute($key, $value)
     {
         if ($this->isTranslatableAttribute($key) && is_array($value)) {
@@ -61,38 +153,33 @@ trait HasTranslations
         return $this->setTranslation($key, $this->getLocale(), $value);
     }
 
-    public function translate(string $key, string $locale = '', bool $useFallbackLocale = true): mixed
+
+
+    // ====== 多语言列, JSON =============================================
+
+    /**
+     * ---------------------------------------
+     * 取当前"列"指定语言的值
+     *
+     * @param string $key
+     * @param string $locale
+     * @return mixed
+     * @author hlf <phphome@qq.com> 2024/10/24
+     * ---------------------------------------
+     */
+    public function getTranslation(string $key, string $locale): mixed
     {
-        return $this->getTranslation($key, $locale, $useFallbackLocale);
-    }
+        $normalizedLocale = $this->normalizeLocale($key, $locale); // 取标准的语言:zh_CN/en
 
-    public function getTranslation(string $key, string $locale, bool $useFallbackLocale = true): mixed
-    {
-        $normalizedLocale = $this->normalizeLocale($key, $locale, $useFallbackLocale);
+        $translations = $this->getTranslations($key); // ['zh_CN'=>'中文', 'en'=>'English']
 
-        $isKeyMissingFromLocale = ($locale !== $normalizedLocale);
+        $translation = $translations[$normalizedLocale] ?? ''; // 当前语言值: 中文
 
-        $translations = $this->getTranslations($key);
-
-        $translation = $translations[$normalizedLocale] ?? '';
-
-        $translatableConfig = app(Translatable::class);
-
-        if ($isKeyMissingFromLocale && $translatableConfig->missingKeyCallback) {
-            try {
-                $callbackReturnValue = (app(Translatable::class)->missingKeyCallback)($this, $key, $locale, $translation, $normalizedLocale);
-                if (is_string($callbackReturnValue)) {
-                    $translation = $callbackReturnValue;
-                }
-            } catch (Exception) {
-                //prevent the fallback to crash
-            }
-        }
-
+        // get{$key}Attribute 方法
         if ($this->hasGetMutator($key)) {
             return $this->mutateAttribute($key, $translation);
         }
-
+        // $attributeMutatorCache 缓存的方法
         if($this->hasAttributeMutator($key)) {
             return $this->mutateAttributeMarkedAttribute($key, $translation);
         }
@@ -100,26 +187,29 @@ trait HasTranslations
         return $translation;
     }
 
-    public function getTranslationWithFallback(string $key, string $locale): mixed
-    {
-        return $this->getTranslation($key, $locale, true);
-    }
-
-    public function getTranslationWithoutFallback(string $key, string $locale): mixed
-    {
-        return $this->getTranslation($key, $locale, false);
-    }
-
+    /**
+     * ---------------------------------------
+     * 获取 "多语言字段", 并将多语言字段解析成数组(单个/多个)
+     *
+     * @param string|null $key
+     * @param array|null $allowedLocales 允许的语言, 主要用于语言过滤
+     * @return array
+     * @author hlf <phphome@qq.com> 2024/10/24
+     * ---------------------------------------
+     */
     public function getTranslations(string $key = null, array $allowedLocales = null): array
     {
         if ($key !== null) {
-            $this->guardAgainstNonTranslatableAttribute($key);
-
-            $_attrs_str = $this->getAttributes()[$key];
-            $_attrs_arr = json_decode($_attrs_str ?? '' ?: '{}', true);
-
+            $_attr = $this->getAttributes();
+            if (!isset($_attr[$key])) {
+                // 模型中无此"列"
+                return [];
+            }
+            // JSON转Array
+            $_attrs_arr = json_decode($_attr[$key] ?? '' ?: '{}', true);
             // JSON字符串, 反序列化
-            if (json_last_error() === JSON_ERROR_NONE) {
+            if (json_last_error() === JSON_ERROR_NONE && is_array($_attrs_arr)) {
+                // ['zh_CN'=>'中文', 'en'=>'English']
                 return array_filter(
                     $_attrs_arr ?: [],
                     fn ($value, $locale) => $this->filterTranslations($value, $locale, $allowedLocales),
@@ -127,23 +217,31 @@ trait HasTranslations
                 );
             }
             // 如果是字符串, 构造一个数组 ['zh_CN' => '属性值'], 方便兼容旧数据
-            return [config('app.locale') => $_attrs_str];
+            return [config('app.locale') => $_attr[$key]];
         }
 
+        // 多字段反序列化
         return array_reduce($this->getTranslatableAttributes(), function ($result, $item) use ($allowedLocales) {
             $result[$item] = $this->getTranslations($item, $allowedLocales);
 
-            return $result;
+            return $result; // ['title'=>['zh_CN'=>'中文', 'en'=>'English'], .....]
         });
     }
 
+    /**
+     * ---------------------------------------
+     * 设置"列"的语言值
+     *
+     * @param string $key
+     * @param string $locale
+     * @param $value
+     * @return $this
+     * @author hlf <phphome@qq.com> 2024/10/24
+     * ---------------------------------------
+     */
     public function setTranslation(string $key, string $locale, $value): self
     {
-        $this->guardAgainstNonTranslatableAttribute($key);
-
         $translations = $this->getTranslations($key);
-
-        $oldValue = $translations[$locale] ?? '';
 
         if ($this->hasSetMutator($key)) {
             $method = 'set'.Str::studly($key).'Attribute';
@@ -159,17 +257,24 @@ trait HasTranslations
 
         $translations[$locale] = $value;
 
+        // 设置列的json值
         $this->attributes[$key] = json_encode($translations, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-
-        // event(new TranslationHasBeenSetEvent($this, $key, $locale, $oldValue, $value));
 
         return $this;
     }
 
+    /**
+     * ---------------------------------------
+     * 批量设置值
+     *
+     * @param string $key
+     * @param array $translations ['zh_CN'=>'中文', 'en'=>'English']
+     * @return $this
+     * @author hlf <phphome@qq.com> 2024/10/24
+     * ---------------------------------------
+     */
     public function setTranslations(string $key, array $translations): self
     {
-        $this->guardAgainstNonTranslatableAttribute($key);
-
         if (! empty($translations)) {
             foreach ($translations as $locale => $translation) {
                 $this->setTranslation($key, $locale, $translation);
@@ -181,110 +286,85 @@ trait HasTranslations
         return $this;
     }
 
-    public function forgetTranslation(string $key, string $locale): self
+
+    // ====== 以下为辅助方法 ================================================
+
+    /**
+     * ---------------------------------------
+     * 获取支持多语言的列 ['title', 'desc', ....]
+     *
+     * @return array
+     * @author hlf <phphome@qq.com> 2024/10/17
+     * ---------------------------------------
+     */
+    public function getTranslatableAttributes(): array
     {
-        $translations = $this->getTranslations($key);
-
-        unset(
-            $translations[$locale],
-            $this->$key
-        );
-
-        $this->setTranslations($key, $translations);
-
-        return $this;
+        return is_array($this->translatable)
+            ? $this->translatable
+            : [];
     }
 
-    public function forgetTranslations(string $key, bool $asNull = false): self
-    {
-        $this->guardAgainstNonTranslatableAttribute($key);
-
-        collect($this->getTranslatedLocales($key))->each(function (string $locale) use ($key) {
-            $this->forgetTranslation($key, $locale);
-        });
-
-        if ($asNull) {
-            $this->attributes[$key] = null;
-        }
-
-        return $this;
-    }
-
-    public function forgetAllTranslations(string $locale): self
-    {
-        collect($this->getTranslatableAttributes())->each(function (string $attribute) use ($locale) {
-            $this->forgetTranslation($attribute, $locale);
-        });
-
-        return $this;
-    }
-
+    /**
+     * ---------------------------------------
+     * 取当前"列"的值, 已经设置了哪些语言
+     *
+     * @param string $key
+     * @return array
+     * @author hlf <phphome@qq.com> 2024/10/24
+     * ---------------------------------------
+     */
     public function getTranslatedLocales(string $key): array
     {
         return array_keys($this->getTranslations($key));
     }
 
+    /**
+     * ---------------------------------------
+     * 判断当前"列"是否支持多语言
+     *
+     * @param string $key
+     * @return bool
+     * @author hlf <phphome@qq.com> 2024/10/24
+     * ---------------------------------------
+     */
     public function isTranslatableAttribute(string $key): bool
     {
         return in_array($key, $this->getTranslatableAttributes());
     }
 
-    public function hasTranslation(string $key, string $locale = null): bool
+
+    /**
+     * ---------------------------------------
+     * 规范当前语言
+     *
+     * @param string $key
+     * @param string $locale
+     * @return string
+     * @author hlf <phphome@qq.com> 2024/10/24
+     * ---------------------------------------
+     */
+    protected function normalizeLocale(string $key, string $locale): string
     {
-        $locale = $locale ?: $this->getLocale();
-
-        return isset($this->getTranslations($key)[$locale]);
-    }
-
-    public function replaceTranslations(string $key, array $translations): self
-    {
-        foreach ($this->getTranslatedLocales($key) as $locale) {
-            $this->forgetTranslation($key, $locale);
-        }
-
-        $this->setTranslations($key, $translations);
-
-        return $this;
-    }
-
-    protected function guardAgainstNonTranslatableAttribute(string $key): void
-    {
-//        if (! $this->isTranslatableAttribute($key)) {
-//            throw AttributeIsNotTranslatable::make($key, $this);
-//        }
-    }
-
-    protected function normalizeLocale(string $key, string $locale, bool $useFallbackLocale): string
-    {
-        $translatedLocales = $this->getTranslatedLocales($key);
+        $translatedLocales = $this->getTranslatedLocales($key); // 取当前key的多语言列表['zh_CN', 'en']
 
         if (in_array($locale, $translatedLocales)) {
             return $locale;
         }
 
-        if (! $useFallbackLocale) {
-            return $locale;
-        }
-
-        if (method_exists($this, 'getFallbackLocale')) {
-            $fallbackLocale = $this->getFallbackLocale();
-        }
-
-        $fallbackConfig = app(Translatable::class);
-
-        $fallbackLocale ??= $fallbackConfig->fallbackLocale ?? config('app.fallback_locale');
-
-        if (! is_null($fallbackLocale) && in_array($fallbackLocale, $translatedLocales)) {
-            return $fallbackLocale;
-        }
-
-        if (! empty($translatedLocales) && $fallbackConfig->fallbackAny) {
-            return $translatedLocales[0];
-        }
-
-        return $locale;
+        return $this->getLocale();
     }
 
+    /**
+     * ---------------------------------------
+     * 过滤$value中的语言字段
+     *
+     * @param mixed|null $value
+     * @param string|null $locale
+     * @param array|null $allowedLocales
+     * @return bool
+     * @author hlf <phphome@qq.com> 2024/10/24
+     * ---------------------------------------
+     */
     protected function filterTranslations(mixed $value = null, string $locale = null, array $allowedLocales = null): bool
     {
         if ($value === null) {
@@ -308,89 +388,7 @@ trait HasTranslations
 
 
 
-    public function setLocale(string $locale): self
-    {
-        $this->translationLocale = $locale;
-
-        return $this;
-    }
-
-    public function getLocale(): string
-    {
-        return $this->translationLocale ?: config('app.locale');
-    }
-
-    /**
-     * ---------------------------------------
-     * 多语言字段
-     *
-     * @return array
-     * @author hlf <phphome@qq.com> 2024/10/17
-     * ---------------------------------------
-     */
-    public function getTranslatableAttributes(): array
-    {
-        return is_array($this->translatable)
-            ? $this->translatable
-            : [];
-    }
-
-    public function translations(): Attribute
-    {
-        return Attribute::get(function () {
-            return collect($this->getTranslatableAttributes())
-                ->mapWithKeys(function (string $key) {
-                    return [$key => $this->getTranslations($key)];
-                })
-                ->toArray();
-        });
-    }
-
-    /**
-     * ---------------------------------------
-     * 获取映射数组, 将 多语言字段 映射成array,
-     * 会使用 HasAttributes->castAttribute($key, $value) 执行return $this->fromJson($value);
-     *
-     * @return array
-     * @author hlf <phphome@qq.com> 2024/10/17
-     * ---------------------------------------
-     */
-    public function getCasts(): array
-    {
-        return array_merge(
-            parent::getCasts(),
-            array_fill_keys($this->getTranslatableAttributes(), 'array'),
-        );
-    }
-
-    /**
-     * Decode the given JSON back into an array or object.
-     * 重写模型的 HasAttributes->fromJson() 方法, 用以处理json时,如果非json格式, 那么返回原数据
-     *
-     * @param  string  $value
-     * @param  bool  $asObject
-     * @return mixed
-     */
-    public function fromJson($value, $asObject = false): mixed {
-        $obj = json_decode($value ?? '', ! $asObject);
-        if (json_last_error() === JSON_ERROR_NONE) {
-            return $obj;
-        }
-        return $value;
-    }
-
-
-
-
-
-    public function locales(): array
-    {
-        return array_unique(
-            array_reduce($this->getTranslatableAttributes(), function ($result, $item) {
-                return array_merge($result, $this->getTranslatedLocales($item));
-            }, [])
-        );
-    }
+    // ===== 构造JSON的sql条件查询 ================================
 
     public function scopeWhereLocale(Builder $query, string $column, string $locale): void
     {
@@ -419,8 +417,6 @@ trait HasTranslations
             }
         });
     }
-
-    // ===== sql条件查询: 查询指定列,的语言 ================================
 
     /**
      * @deprecated

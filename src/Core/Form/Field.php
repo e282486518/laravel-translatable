@@ -46,7 +46,7 @@ class Field extends \Dcat\Admin\Form\Field
     /**
      * @return string
      */
-    protected function defaultPlaceholder(): string {
+    protected function defaultPlaceholder() {
         return trans('admin.input', [], $this->getLocale()).' '.$this->label;
     }
 
@@ -94,7 +94,11 @@ class Field extends \Dcat\Admin\Form\Field
                 }
                 if ($name == 'value' && is_array($value)) {
                     // value=$value[en]
-                    $value = Arr::get($value, $this->getLocale(), json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+                    if (Arr::has($value, $this->getLocale())) {
+                        $value = Arr::get($value, $this->getLocale(), json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+                    } else {
+                        $value = '';
+                    }
                 }
             }
             $html[] = $name.'="'.e($value).'"';
@@ -117,10 +121,10 @@ class Field extends \Dcat\Admin\Form\Field
         }
 
         return [
-            'name'        => $this->getElementName().$this->getLocaleName(),
+            'name'        => $this->getLocaleName($this->getElementName()),
             'help'        => $this->help,
             'class'       => $this->getElementClassString(),
-            'value'       => $this->value(),
+            'value'       => $this->getLocaleValue($this->value()),
             'label'       => $this->label.$this->getLocaleLabel(),
             'viewClass'   => $this->getViewElementClasses(),
             'column'      => $this->column,
@@ -138,15 +142,36 @@ class Field extends \Dcat\Admin\Form\Field
      * ---------------------------------------
      * 在 form 的 name 值后面加上 语言 属性, "name=abc" => "name=abc[zh_CN]"
      *
-     * @return string
+     * @return string|array
      * @author hlf <phphome@qq.com> 2024/10/18
      * ---------------------------------------
      */
-    public function getLocaleName() {
-        if ($this->getTranslatable()) {
-            return '['.$this->getLocale().']';
+    public function getLocaleValue($value) {
+        if (is_array($value) && $this->getTranslatable()) {
+            if (isset($value[$this->getLocale()])) {
+                return $value[$this->getLocale()];
+            }
+            return '';
         }
-        return '';
+        return $value;
+    }
+
+    /**
+     * ---------------------------------------
+     * 在 form 的 name 值后面加上 语言 属性, "name=abc" => "name=abc[zh_CN]"
+     *
+     * @return string|array
+     * @author hlf <phphome@qq.com> 2024/10/18
+     * ---------------------------------------
+     */
+    public function getLocaleName($name) {
+        if (is_array($name)) {
+            return $name;
+        }
+        if ($this->getTranslatable()) {
+            return $name.'['.$this->getLocale().']';
+        }
+        return $name;
     }
 
     /**

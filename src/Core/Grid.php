@@ -25,4 +25,14 @@ class Grid extends \Dcat\Admin\Grid
         }
     }
 
+    /**
+     * @param  \Closure  $closure
+     * @return Grid\Tools\RowSelector
+     */
+    public function rowSelector()
+    {
+        return $this->rowSelector ?: ($this->rowSelector = new Grid\Tools\RowSelector($this));
+    }
+
+
 }

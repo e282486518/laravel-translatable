@@ -3,12 +3,14 @@
 namespace e282486518\Translatable\Core;
 
 use Closure;
+use Dcat\Admin\Admin;
 use Dcat\Admin\Contracts\Repository;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use e282486518\Translatable\Helpers;
 use e282486518\Translatable\Core\Form\Field;
+use Illuminate\Support\Fluent;
 
 class Form extends \Dcat\Admin\Form
 {
@@ -82,9 +84,15 @@ class Form extends \Dcat\Admin\Form
      */
     public function __construct($repository = null, ?Closure $callback = null, Request $request = null)
     {
-        parent::__construct($repository, $callback, $request);
+        $this->repository = $repository ? Admin::repository($repository) : null;
+        $this->callback = $callback;
+        $this->request = $request ?: request();
         $this->builder = new Form\Builder($this);
+        $this->isSoftDeletes = $repository ? $this->repository->isSoftDeletes() : false;
 
+        $this->model(new Fluent());
+        $this->prepareDialogForm();
+        $this->callResolving();
     }
 
     /**
@@ -179,5 +187,18 @@ class Form extends \Dcat\Admin\Form
         admin_error('Error', "Field type [$method] does not exist.");
 
         return new Field\Nullable();
+    }
+
+    /**
+     * 重写 use Concerns\HasRows 方法
+     *
+     * @param  Closure  $callback
+     * @return $this
+     */
+    public function row(Closure $callback)
+    {
+        $this->rows[] = new Form\Row($callback, $this);
+
+        return $this;
     }
 }

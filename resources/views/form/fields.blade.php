@@ -5,7 +5,7 @@
         @endforeach
 
         @foreach($fields as $field)
-            @if($field instanceof Dcat\Admin\Form\Field\Hidden)
+            @if($field instanceof e282486518\Translatable\Core\Form\Field\Hidden)
                 {!! $field->render() !!}
             @endif
         @endforeach
