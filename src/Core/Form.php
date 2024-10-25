@@ -14,6 +14,8 @@ use Illuminate\Support\Fluent;
 
 class Form extends \Dcat\Admin\Form
 {
+    
+    use HasFormTranslatable;
 
     protected static $availableFields = [
         'button'              => Field\Button::class,
@@ -93,22 +95,6 @@ class Form extends \Dcat\Admin\Form
         $this->model(new Fluent());
         $this->prepareDialogForm();
         $this->callResolving();
-    }
-
-    /**
-     * @var string 多语言Form展示方式: tab/line
-     */
-    protected $localeForm;
-    // 设置
-    public function setLocaleForm($lab) {
-        if (in_array($lab, ['tab', 'line'])) {
-            $this->localeForm = $lab;
-        }
-        return $this;
-    }
-    // 获取
-    public function getLocaleForm() {
-        return $this->localeForm ?? config('translatable.locale_form');
     }
 
     /**
